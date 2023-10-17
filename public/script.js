@@ -31,23 +31,13 @@ let date = new Date();
 let currYear = date.getFullYear();
 let currMonth = date.getMonth();
 
-async function readAllData(year,month){
+async function readAllData(year,month,day){
     let dbref = ref(db);
     //lettura dati dal db
     let dbDate = await get(child(dbref,"date/" + year + "/" + month));
     allMonthDate = dbDate.val();
 
-    renderCalendar();
 }
-
-readAllData(currYear,currMonth + 1);
-
-let todayDate = new Date();
-
-//creazione della data completa corrente
-let todayFullDate = (todayDate.getDate()) + "-" + (todayDate.getMonth()+1) + "-" + todayDate.getFullYear();
-
-const audio = new Audio();
 
 function saluto(){
     audio.src = "audio/Si.mp3";
@@ -60,6 +50,8 @@ function saluto(){
         dataCompleta: todayFullDate,
         passato: "si"
     });
+
+    renderCalendar()
 }
 
 function giustifica(){
@@ -73,6 +65,8 @@ function giustifica(){
         dataCompleta: todayFullDate,
         passato: "giustifica"
     });
+
+    renderCalendar()
 }
 
 function no(){
@@ -86,7 +80,20 @@ function no(){
         dataCompleta: todayFullDate,
         passato: "no"
     });
+
+    renderCalendar()
 }
+
+renderCalendar()
+
+let todayDate = new Date();
+
+//creazione della data completa corrente
+let todayFullDate = (todayDate.getDate()) + "-" + (todayDate.getMonth()+1) + "-" + todayDate.getFullYear();
+
+const audio = new Audio();
+
+
 
 
 const buttonFatto = document.querySelector(".green");
@@ -101,12 +108,14 @@ buttonNo.addEventListener("click", no);
 //gestione calendario
 
 const months = ["January","February","March","April","May","June","July","August","Septmber","October","November","December"];
-const renderCalendar = () =>{
+async function renderCalendar(){
     let firstDayofTheMonth = new Date(currYear,currMonth  ,0 ).getDay(),
     lastDateOfMonth = new Date(currYear,currMonth +1,0).getDate(),
     lastDayofMonth = new Date(currYear,currMonth,lastDateOfMonth).getDay(),
     lastDateOfLastMonth = new Date(currYear,currMonth ,0).getDate();
     let liTag="";
+
+    await readAllData(currYear,currMonth + 1);
 
     for(let i = firstDayofTheMonth ; i >0; i--){
         liTag += `<li class = "inactive">${lastDateOfMonth - i + 1}</li>`;
@@ -152,7 +161,7 @@ const renderCalendar = () =>{
 
 prevNext.forEach(icon=>{
     icon.addEventListener("click",()=>{
-        currMonth=icon.id ==="prev" ? currMonth -1 : currMonth+1;
+        currMonth=icon.id ==="prev" ? currMonth - 1 : currMonth + 1;
 
         if (currMonth < 0|| currMonth >11) {
             date = new Date(currYear,currMonth);
