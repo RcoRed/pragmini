@@ -1,5 +1,6 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -17,6 +18,9 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
+emailjs.init("TyqK1p4vTlYt14PYY");
+
+
 import {getDatabase, ref, get, set, child, update, remove} from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
 
 const db = getDatabase();
@@ -25,30 +29,44 @@ const daysTag = document.querySelector(".days");
 const prevNext = document.querySelectorAll(".icons span ");
 
 let allMonthDate = {};
+const audio = new Audio();
 
 let passato = "";
 let date = new Date();
 let currYear = date.getFullYear();
 let currMonth = date.getMonth();
+//creazione della data completa corrente
+let todayFullDate = (date.getDate()) + "-" + (date.getMonth()+1) + "-" + date.getFullYear();
 
-async function readAllData(year,month,day){
+async function readDate(year,month = null,day = null){
+    //creazione richiesta dati al database
+    let query = "date/" + year;
+    if(month != null){
+        query = query + "/" + month;
+    }
+    if(day != null){
+        query = query + "/" + day;
+    }
+
     let dbref = ref(db);
     //lettura dati dal db
-    let dbDate = await get(child(dbref,"date/" + year + "/" + month));
+    let dbDate = await get(child(dbref,query));
     allMonthDate = dbDate.val();
-
+    return dbDate.val();
 }
 
+//funzioni scrittura sul db
 function saluto(){
     audio.src = "audio/Si.mp3";
     audio.play();
-    set(ref(db, "date/" + currYear + "/" + (currMonth + 1) + "/" + todayDate.getDate()),{
-        giorno: todayDate.getDate(),
+    set(ref(db, "date/" + currYear + "/" + (currMonth + 1) + "/" + date.getDate()),{
+        giorno: date.getDate(),
         mese: currMonth+1,
         anno: currYear,
-        giornoSettimana: todayDate.getDay(),
+        giornoSettimana: date.getDay(),
         dataCompleta: todayFullDate,
-        passato: "si"
+        passato: "si",
+        email: null
     });
 
     renderCalendar()
@@ -57,13 +75,14 @@ function saluto(){
 function giustifica(){
     audio.src = "audio/Giustifica.mp3";
     audio.play();
-    set(ref(db, "date/" + currYear + "/" + (currMonth + 1) + "/" + todayDate.getDate()),{
-        giorno: todayDate.getDate(),
+    set(ref(db, "date/" + currYear + "/" + (currMonth + 1) + "/" + date.getDate()),{
+        giorno: date.getDate(),
         mese: currMonth+1,
         anno: currYear,
-        giornoSettimana: todayDate.getDay(),
+        giornoSettimana: date.getDay(),
         dataCompleta: todayFullDate,
-        passato: "giustifica"
+        passato: "giustifica",
+        email: null
     });
 
     renderCalendar()
@@ -72,29 +91,32 @@ function giustifica(){
 function no(){
     audio.src = "audio/No.mp3";
     audio.play();
-    set(ref(db, "date/" + currYear + "/" + (currMonth + 1) + "/" + todayDate.getDate()),{
-        giorno: todayDate.getDate(),
+    set(ref(db, "date/" + currYear + "/" + (currMonth + 1) + "/" + date.getDate()),{
+        giorno: date.getDate(),
         mese: currMonth+1,
         anno: currYear,
-        giornoSettimana: todayDate.getDay(),
+        giornoSettimana: date.getDay(),
         dataCompleta: todayFullDate,
-        passato: "no"
+        passato: "no",
+        email: "inviare"
     });
 
     renderCalendar()
 }
 
+let selected = null;
+function ciccio(){
+    if(selected == null){
+        selected = this;
+    }else {
+        selected.classList.remove("selected");
+    }
+    this.classList.add("selected");
+    selected = this;
+}
+
+//startapp
 renderCalendar()
-
-let todayDate = new Date();
-
-//creazione della data completa corrente
-let todayFullDate = (todayDate.getDate()) + "-" + (todayDate.getMonth()+1) + "-" + todayDate.getFullYear();
-
-const audio = new Audio();
-
-
-
 
 const buttonFatto = document.querySelector(".green");
 buttonFatto.addEventListener("click", saluto);
@@ -105,8 +127,9 @@ buttonGiustifica.addEventListener("click", giustifica);
 const buttonNo = document.querySelector(".red");
 buttonNo.addEventListener("click", no);
 
-//gestione calendario
 
+
+//gestione calendario
 const months = ["January","February","March","April","May","June","July","August","Septmber","October","November","December"];
 async function renderCalendar(){
     let firstDayofTheMonth = new Date(currYear,currMonth  ,0 ).getDay(),
@@ -115,7 +138,7 @@ async function renderCalendar(){
     lastDateOfLastMonth = new Date(currYear,currMonth ,0).getDate();
     let liTag="";
 
-    await readAllData(currYear,currMonth + 1);
+    await readDate(currYear,currMonth + 1);
 
     for(let i = firstDayofTheMonth ; i >0; i--){
         liTag += `<li class = "inactive">${lastDateOfMonth - i + 1}</li>`;
@@ -145,18 +168,23 @@ async function renderCalendar(){
                 
             }
         }
-        console.log(passato);
         liTag += `<li class ="${isToday}"><div class = "${passato}">${i}</div></li>` ;
         passato = "";
     }
 
-    for(let i = lastDayofMonth ; i <6 ; i++){
+    for(let i = lastDayofMonth ; i <7 ; i++){
         liTag += `<li class = "inactive">${i-lastDayofMonth + 1}</li>`;
     }
 
 
     currentDate.innerText= `${months[currMonth]} ${currYear}`;
     daysTag.innerHTML = liTag;
+
+    const giorni = document.querySelectorAll(".days li div");
+    console.log(giorni)
+    giorni.forEach((g) => {
+        g.addEventListener("click", ciccio);
+    })
 }
 
 prevNext.forEach(icon=>{
@@ -173,3 +201,26 @@ prevNext.forEach(icon=>{
         renderCalendar();
     });
 });
+
+async function controller(){
+    let giornoSettimana = date.getDay();
+    let giornoPrecedente;
+    //se è lunedì
+    if(giornoSettimana == 0){
+        giornoPrecedente = await readDate(currYear,currMonth + 1,date.getDate() - 4);
+    }else if(giornoSettimana <= 3){ //se è un giorno lavorativo
+        giornoPrecedente = await readDate(currYear,currMonth + 1,date.getDate() - 1);
+    }else{ //se è fine settimana compreso venerdì
+        giornoPrecedente = await readDate(currYear,currMonth + 1,date.getDate() - (giornoSettimana - 3));
+    }
+    if(giornoPrecedente.email == "inviare"){
+        console.log("dentro");
+        emailjs.send("service_b6ndar9","template1",{});
+        update(ref(db, "date/" + giornoPrecedente.anno + "/" + giornoPrecedente.mese + "/" + giornoPrecedente.giorno),{
+            email: null
+        });
+    }
+
+}
+controller();
+
