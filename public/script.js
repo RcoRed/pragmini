@@ -215,7 +215,7 @@ async function controller(){
     }
     if(giornoPrecedente.email == "inviare"){
         console.log("dentro");
-        emailjs.send("service_b6ndar9","template1",{});
+        emailjs.send("service_0mfdfsg","template1",{});
         update(ref(db, "date/" + giornoPrecedente.anno + "/" + giornoPrecedente.mese + "/" + giornoPrecedente.giorno),{
             email: null
         });
